@@ -1,0 +1,1105 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lyrikko - Éditeur de Paroles Synchronisées (LRC)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #e6e6e6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            color: #4cc9f0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .subtitle {
+            font-size: 1.2rem;
+            color: #a5b1c2;
+            margin-bottom: 20px;
+        }
+        
+        .creator {
+            font-size: 1rem;
+            color: #a5b1c2;
+            font-style: italic;
+        }
+        
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        
+        .step {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            transition: transform 0.3s, background 0.3s;
+        }
+        
+        .step:hover {
+            transform: translateY(-5px);
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .step-number {
+            display: inline-block;
+            width: 30px;
+            height: 30px;
+            background: #4cc9f0;
+            color: #16213e;
+            border-radius: 50%;
+            line-height: 30px;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        
+        .editor-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        @media (max-width: 768px) {
+            .editor-container {
+                grid-template-columns: 1fr;
+            }
+            
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .player-controls {
+                flex-wrap: wrap;
+                gap: 10px;
+            }
+            
+            .spacebar-hint {
+                font-size: 0.8rem;
+            }
+            
+            .mobile-timestamp-btn {
+                display: block !important;
+            }
+        }
+        
+        .panel {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .panel h2 {
+            margin-bottom: 15px;
+            color: #4cc9f0;
+            font-size: 1.5rem;
+        }
+        
+        textarea {
+            width: 100%;
+            height: 200px;
+            background: rgba(255, 255, 255, 0.07);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 5px;
+            padding: 10px;
+            color: #e6e6e6;
+            font-size: 1rem;
+            resize: vertical;
+        }
+        
+        textarea:focus {
+            outline: none;
+            border-color: #4cc9f0;
+        }
+        
+        .lyrics-display {
+            height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        
+        .lyric-line {
+            padding: 8px 10px;
+            margin: 5px 0;
+            border-radius: 5px;
+            transition: background 0.2s;
+        }
+        
+        .lyric-line.active {
+            background: rgba(76, 201, 240, 0.2);
+            color: #4cc9f0;
+            font-weight: bold;
+        }
+        
+        .lyric-line.timestamped {
+            border-left: 3px solid #4cc9f0;
+        }
+        
+        .player-controls {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        
+        .time-display {
+            font-family: monospace;
+            font-size: 1.2rem;
+            color: #4cc9f0;
+        }
+        
+        button {
+            background: #4cc9f0;
+            color: #16213e;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.3s, transform 0.2s;
+        }
+        
+        button:hover {
+            background: #3aa8d0;
+            transform: translateY(-2px);
+        }
+        
+        button:active {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            background: #a5b1c2;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .spacebar-hint {
+            text-align: center;
+            padding: 10px;
+            background: rgba(76, 201, 240, 0.1);
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .spacebar-key {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 5px 15px;
+            border-radius: 5px;
+            margin: 0 5px;
+            font-weight: bold;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .output-panel {
+            margin-top: 20px;
+        }
+        
+        .lrc-output {
+            font-family: monospace;
+            white-space: pre-wrap;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .file-upload {
+            margin-bottom: 20px;
+        }
+        
+        .file-input {
+            display: none;
+        }
+        
+        .file-label {
+            display: block;
+            background: rgba(76, 201, 240, 0.1);
+            border: 2px dashed #4cc9f0;
+            border-radius: 5px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+        
+        .file-label:hover {
+            background: rgba(76, 201, 240, 0.2);
+        }
+        
+        .file-info {
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #a5b1c2;
+        }
+        
+        .audio-player {
+            width: 100%;
+            margin-bottom: 20px;
+        }
+        
+        .progress-container {
+            margin-top: 10px;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+        }
+        
+        .progress {
+            height: 100%;
+            background: #4cc9f0;
+            width: 0%;
+            transition: width 0.1s;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #a5b1c2;
+            font-size: 0.9rem;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #4cc9f0;
+            color: #16213e;
+            padding: 15px 20px;
+            border-radius: 5px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transform: translateX(150%);
+            transition: transform 0.3s;
+            z-index: 1000;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .status-info {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+        
+        .demo-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(76, 201, 240, 0.1);
+            border-radius: 5px;
+        }
+        
+        .demo-section h3 {
+            color: #4cc9f0;
+            margin-bottom: 10px;
+        }
+        
+        .preview-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(76, 240, 120, 0.1);
+            border-radius: 5px;
+            border: 1px solid rgba(76, 240, 120, 0.3);
+        }
+        
+        .preview-section h3 {
+            color: #4cf078;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .preview-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+        
+        .preview-btn {
+            background: #4cf078;
+            color: #16213e;
+        }
+        
+        .preview-btn:hover {
+            background: #3acf66;
+        }
+        
+        .preview-lyrics {
+            height: 300px;
+            overflow-y: auto;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 5px;
+            font-size: 1.1rem;
+            text-align: center;
+        }
+        
+        .preview-line {
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            transition: all 0.3s ease;
+            min-height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .preview-line.active {
+            background: rgba(76, 240, 120, 0.3);
+            color: #4cf078;
+            font-weight: bold;
+            font-size: 1.3rem;
+            transform: scale(1.05);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        }
+        
+        .preview-line.past {
+            color: #a5b1c2;
+            opacity: 0.7;
+        }
+        
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .secondary-btn {
+            background: rgba(255, 255, 255, 0.1);
+            color: #e6e6e6;
+        }
+        
+        .secondary-btn:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+        
+        .preview-audio-player {
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        
+        .preview-info {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+
+        .upload-success {
+            color: #4cf078;
+            font-weight: bold;
+        }
+
+        .upload-error {
+            color: #f04c78;
+            font-weight: bold;
+        }
+        
+        .download-hint {
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(76, 201, 240, 0.1);
+            border-radius: 5px;
+            font-size: 0.9rem;
+            text-align: center;
+            border-left: 3px solid #4cc9f0;
+        }
+        
+        .mobile-timestamp-btn {
+            display: none;
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1rem;
+            margin-top: 10px;
+            background: #4cf078;
+            color: #16213e;
+        }
+        
+        .mobile-timestamp-btn:active {
+            background: #3acf66;
+            transform: scale(0.98);
+        }
+        
+        @media (max-width: 768px) {
+            .mobile-timestamp-btn {
+                display: block;
+            }
+            
+            .spacebar-hint {
+                display: none;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎶 Lyrikko</h1>
+            <p class="subtitle">Éditeur de Paroles Synchronisées (LRC)</p>
+            <p class="creator">Créé par Rady Jackson</p>
+        </header>
+        
+        <div class="steps">
+            <div class="step">
+                <div class="step-number">1</div>
+                <p>Téléchargez un fichier MP3</p>
+            </div>
+            <div class="step">
+                <div class="step-number">2</div>
+                <p>Collez le texte des paroles</p>
+            </div>
+            <div class="step">
+                <div class="step-number">3</div>
+                <p>Appuyez sur lecture pour démarrer la musique</p>
+            </div>
+            <div class="step">
+                <div class="step-number">4</div>
+                <p>Appuyez sur espace pour synchroniser les paroles</p>
+            </div>
+            <div class="step">
+                <div class="step-number">5</div>
+                <p>Vérifiez le résultat et exportez</p>
+            </div>
+        </div>
+        
+        <div class="demo-section">
+            <h3>Exemple avec vos paroles:</h3>
+            <p><strong>Instructions:</strong> Chargez les paroles, appuyez sur Lecture, puis appuyez brièvement sur ESPACE au moment où chaque ligne est chantée. La ligne sera horodatée et vous passerez automatiquement à la suivante.</p>
+        </div>
+        
+        <div class="editor-container">
+            <div class="panel">
+                <h2>Fichier MP3</h2>
+                <div class="file-upload">
+                    <input type="file" id="mp3-file" class="file-input" accept=".mp3,audio/*">
+                    <label for="mp3-file" class="file-label">
+                        <p>Cliquez pour télécharger un fichier MP3</p>
+                        <p class="file-info">ou glissez-déposez ici</p>
+                    </label>
+                    <div id="file-name" class="file-info">Aucun fichier sélectionné</div>
+                    <div id="file-status" class="file-info"></div>
+                </div>
+                
+                <audio id="audio-player" class="audio-player" controls></audio>
+                
+                <div class="progress-container">
+                    <div class="progress-bar">
+                        <div class="progress" id="progress-bar"></div>
+                    </div>
+                </div>
+                
+                <h2 style="margin-top: 20px;">Saisie des Paroles</h2>
+                <textarea id="lyrics-input" placeholder="Collez vos paroles ici, une ligne par paroles...">
+</textarea>
+                
+                <div class="action-buttons">
+                    <button id="load-lyrics">Charger les Paroles</button>
+                    <button id="preview-btn" class="secondary-btn">Voir le résultat provisoire</button>
+                </div>
+            </div>
+            
+            <div class="panel">
+                <h2>Affichage des Paroles</h2>
+                <div class="player-controls">
+                    <button id="play-btn">Lecture</button>
+                    <button id="pause-btn">Pause</button>
+                    <button id="reset-btn">Réinitialiser</button>
+                    <div class="time-display" id="time-display">00:00.00</div>
+                </div>
+                
+                <div class="spacebar-hint">
+                    Appuyez sur <span class="spacebar-key">ESPACE</span> pour horodater la ligne actuelle et passer à la suivante
+                </div>
+                
+                <button id="mobile-timestamp-btn" class="mobile-timestamp-btn">
+                    📍 Horodater la Ligne Actuelle
+                </button>
+                
+                <div class="status-info" id="status-info">
+                    Ligne actuelle: <span id="current-line-num">0</span> / <span id="total-lines">0</span>
+                    | Lignes horodatées: <span id="timestamped-count">0</span>
+                </div>
+                
+                <div class="lyrics-display" id="lyrics-display">
+                    <!-- Les paroles seront affichées ici -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Section d'aperçu provisoire -->
+        <div class="preview-section" id="preview-section" style="display: none;">
+            <h3>👁️ Aperçu du Résultat Provisoire</h3>
+            <p>Visualisez comment vos paroles synchronisées s'afficheront avec la musique réelle</p>
+            
+            <div class="preview-controls">
+                <audio id="preview-audio-player" class="preview-audio-player" controls></audio>
+            </div>
+            
+            <div class="preview-controls">
+                <button id="start-preview-from-beginning" class="preview-btn">Démarrer l'aperçu depuis le début</button>
+                <button id="stop-preview" class="secondary-btn">Arrêter l'aperçu</button>
+                <div class="time-display" id="preview-time">00:00.00</div>
+            </div>
+            
+            <div class="preview-info" id="preview-info">
+                L'aperçu utilise la musique réelle avec vos horodatages. Appuyez sur lecture pour voir la synchronisation.
+            </div>
+            
+            <div class="preview-lyrics" id="preview-lyrics">
+                <!-- L'aperçu des paroles synchronisées sera affiché ici -->
+            </div>
+            
+            <div class="action-buttons">
+                <button id="back-to-edit" class="secondary-btn">← Retour à l'édition</button>
+                <button id="export-from-preview">Exporter LRC</button>
+            </div>
+        </div>
+        
+        <div class="panel output-panel">
+            <h2>Sortie LRC</h2>
+            <div class="lrc-output" id="lrc-output">
+                <!-- Le contenu LRC sera affiché ici -->
+            </div>
+            <div class="download-hint">
+                💡 <strong>Important:</strong> Enregistrez le fichier LRC dans le même dossier que votre MP3 pour que la synchronisation fonctionne
+            </div>
+            <div class="action-buttons">
+                <button id="export-btn">Exporter le fichier LRC</button>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Lyrikko - Créé par Rady Jackson</p>
+            <p>Cet éditeur LRC vous permet de synchroniser les paroles avec vos fichiers MP3.</p>
+        </div>
+    </div>
+
+    <div class="notification" id="notification">
+        Fichier LRC exporté avec succès!
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Éléments DOM
+            const mp3FileInput = document.getElementById('mp3-file');
+            const fileNameDisplay = document.getElementById('file-name');
+            const fileStatusDisplay = document.getElementById('file-status');
+            const audioPlayer = document.getElementById('audio-player');
+            const progressBar = document.getElementById('progress-bar');
+            const lyricsInput = document.getElementById('lyrics-input');
+            const loadLyricsBtn = document.getElementById('load-lyrics');
+            const playBtn = document.getElementById('play-btn');
+            const pauseBtn = document.getElementById('pause-btn');
+            const resetBtn = document.getElementById('reset-btn');
+            const timeDisplay = document.getElementById('time-display');
+            const lyricsDisplay = document.getElementById('lyrics-display');
+            const lrcOutput = document.getElementById('lrc-output');
+            const exportBtn = document.getElementById('export-btn');
+            const previewBtn = document.getElementById('preview-btn');
+            const previewSection = document.getElementById('preview-section');
+            const startPreviewBtn = document.getElementById('start-preview-from-beginning');
+            const stopPreviewBtn = document.getElementById('stop-preview');
+            const backToEditBtn = document.getElementById('back-to-edit');
+            const previewLyrics = document.getElementById('preview-lyrics');
+            const previewTime = document.getElementById('preview-time');
+            const previewAudioPlayer = document.getElementById('preview-audio-player');
+            const exportFromPreviewBtn = document.getElementById('export-from-preview');
+            const notification = document.getElementById('notification');
+            const currentLineNum = document.getElementById('current-line-num');
+            const totalLines = document.getElementById('total-lines');
+            const timestampedCount = document.getElementById('timestamped-count');
+            const statusInfo = document.getElementById('status-info');
+            const previewInfo = document.getElementById('preview-info');
+            const mobileTimestampBtn = document.getElementById('mobile-timestamp-btn');
+            
+            // Variables d'état
+            let lyrics = [];
+            let currentLine = 0;
+            let isPlaying = false;
+            let currentTime = 0;
+            let timestamps = [];
+            let audioDuration = 0;
+            let lastSpacePress = 0;
+            let isPreviewMode = false;
+            let currentMp3FileName = '';
+            const SPACE_COOLDOWN = 300;
+            
+            // Initialisation
+            loadLyrics();
+            
+            // Écouteurs d'événements
+            mp3FileInput.addEventListener('change', handleMp3Upload);
+            loadLyricsBtn.addEventListener('click', loadLyrics);
+            playBtn.addEventListener('click', startPlayback);
+            pauseBtn.addEventListener('click', pausePlayback);
+            resetBtn.addEventListener('click', resetPlayback);
+            exportBtn.addEventListener('click', exportLRC);
+            previewBtn.addEventListener('click', showPreview);
+            startPreviewBtn.addEventListener('click', startPreviewFromBeginning);
+            stopPreviewBtn.addEventListener('click', stopPreview);
+            backToEditBtn.addEventListener('click', backToEdit);
+            exportFromPreviewBtn.addEventListener('click', exportLRC);
+            mobileTimestampBtn.addEventListener('click', timestampCurrentLine);
+            
+            // Événements du lecteur audio principal
+            audioPlayer.addEventListener('loadedmetadata', function() {
+                audioDuration = audioPlayer.duration;
+                updateFileStatus('Fichier MP3 chargé avec succès', 'success');
+            });
+            
+            audioPlayer.addEventListener('error', function() {
+                updateFileStatus('Erreur lors du chargement du fichier audio', 'error');
+            });
+            
+            audioPlayer.addEventListener('timeupdate', function() {
+                currentTime = audioPlayer.currentTime;
+                updateTimeDisplay();
+                updateProgressBar();
+            });
+            
+            audioPlayer.addEventListener('ended', function() {
+                isPlaying = false;
+                currentLine = 0;
+                renderLyricsDisplay();
+            });
+            
+            // Événements du lecteur audio d'aperçu
+            previewAudioPlayer.addEventListener('timeupdate', function() {
+                updatePreviewDisplay();
+            });
+            
+            previewAudioPlayer.addEventListener('ended', function() {
+                stopPreview();
+                previewInfo.textContent = "Aperçu terminé. Vous pouvez redémarrer ou retourner à l'édition.";
+            });
+            
+            // Écouteur de la barre d'espace pour l'horodatage
+            document.addEventListener('keydown', function(e) {
+                if (e.code === 'Space' && isPlaying && !isPreviewMode) {
+                    e.preventDefault();
+                    
+                    const now = Date.now();
+                    if (now - lastSpacePress < SPACE_COOLDOWN) {
+                        return;
+                    }
+                    lastSpacePress = now;
+                    
+                    timestampCurrentLine();
+                }
+            });
+            
+            // Glisser-déposer pour le fichier MP3
+            const fileLabel = document.querySelector('.file-label');
+            
+            fileLabel.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                fileLabel.style.background = 'rgba(76, 201, 240, 0.2)';
+            });
+            
+            fileLabel.addEventListener('dragleave', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                fileLabel.style.background = 'rgba(76, 201, 240, 0.1)';
+            });
+            
+            fileLabel.addEventListener('drop', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                fileLabel.style.background = 'rgba(76, 201, 240, 0.1)';
+                
+                if (e.dataTransfer.files.length > 0) {
+                    const file = e.dataTransfer.files[0];
+                    if (file.type.startsWith('audio/') || file.name.toLowerCase().endsWith('.mp3')) {
+                        mp3FileInput.files = e.dataTransfer.files;
+                        handleMp3Upload();
+                    } else {
+                        updateFileStatus('Veuillez déposer un fichier audio MP3', 'error');
+                    }
+                }
+            });
+            
+            // Fonctions pour le téléchargement MP3
+            function handleMp3Upload() {
+                if (mp3FileInput.files.length > 0) {
+                    const file = mp3FileInput.files[0];
+                    
+                    // Validation du fichier
+                    if (!file.type.startsWith('audio/') && !file.name.toLowerCase().endsWith('.mp3')) {
+                        updateFileStatus('Type de fichier non supporté. Veuillez choisir un fichier MP3.', 'error');
+                        return;
+                    }
+                    
+                    // Vérification de la taille du fichier (max 50MB)
+                    if (file.size > 50 * 1024 * 1024) {
+                        updateFileStatus('Fichier trop volumineux. Maximum 50MB.', 'error');
+                        return;
+                    }
+                    
+                    // Sauvegarder le nom du fichier MP3
+                    currentMp3FileName = file.name.replace('.mp3', '').replace('.MP3', '');
+                    
+                    fileNameDisplay.textContent = `Sélectionné: ${file.name} (${formatFileSize(file.size)})`;
+                    updateFileStatus('Chargement du fichier...', 'loading');
+                    
+                    const url = URL.createObjectURL(file);
+                    
+                    // Réinitialiser les lecteurs audio
+                    audioPlayer.src = url;
+                    previewAudioPlayer.src = url;
+                    
+                    // Réinitialiser l'état
+                    audioPlayer.load();
+                    previewAudioPlayer.load();
+                    
+                    // Activer les boutons
+                    playBtn.disabled = false;
+                    pauseBtn.disabled = false;
+                    resetBtn.disabled = false;
+                    
+                    // Attendre que le fichier soit chargé
+                    audioPlayer.addEventListener('canplaythrough', function() {
+                        updateFileStatus('Fichier MP3 prêt à être utilisé', 'success');
+                        showNotification('Fichier MP3 chargé avec succès');
+                    }, { once: true });
+                    
+                } else {
+                    updateFileStatus('Aucun fichier sélectionné', 'error');
+                }
+            }
+            
+            function updateFileStatus(message, type) {
+                fileStatusDisplay.textContent = message;
+                fileStatusDisplay.className = 'file-info';
+                
+                if (type === 'success') {
+                    fileStatusDisplay.classList.add('upload-success');
+                } else if (type === 'error') {
+                    fileStatusDisplay.classList.add('upload-error');
+                } else if (type === 'loading') {
+                    fileStatusDisplay.style.color = '#4cc9f0';
+                }
+            }
+            
+            function formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+            
+            function loadLyrics() {
+                const inputText = lyricsInput.value.trim();
+                lyrics = inputText.split('\n').filter(line => line.trim() !== '');
+                currentLine = 0;
+                timestamps = [];
+                
+                renderLyricsDisplay();
+                updateLROutput();
+                updateStatusInfo();
+                
+                showNotification('Paroles chargées avec succès');
+            }
+            
+            function renderLyricsDisplay() {
+                lyricsDisplay.innerHTML = '';
+                
+                lyrics.forEach((line, index) => {
+                    const lineElement = document.createElement('div');
+                    lineElement.className = 'lyric-line';
+                    lineElement.textContent = line;
+                    
+                    if (index === currentLine && isPlaying) {
+                        lineElement.classList.add('active');
+                    }
+                    
+                    if (timestamps[index]) {
+                        lineElement.classList.add('timestamped');
+                    }
+                    
+                    lyricsDisplay.appendChild(lineElement);
+                });
+                
+                const activeLine = lyricsDisplay.querySelector('.active');
+                if (activeLine) {
+                    activeLine.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+                
+                updateStatusInfo();
+            }
+            
+            function startPlayback() {
+                if (audioPlayer.src && audioPlayer.src !== '') {
+                    audioPlayer.play().then(() => {
+                        isPlaying = true;
+                        renderLyricsDisplay();
+                    }).catch(error => {
+                        updateFileStatus('Erreur de lecture: ' + error.message, 'error');
+                    });
+                } else {
+                    showNotification('Veuillez télécharger un fichier MP3 d\'abord');
+                }
+            }
+            
+            function pausePlayback() {
+                audioPlayer.pause();
+                isPlaying = false;
+                renderLyricsDisplay();
+            }
+            
+            function resetPlayback() {
+                audioPlayer.pause();
+                audioPlayer.currentTime = 0;
+                isPlaying = false;
+                currentLine = 0;
+                updateTimeDisplay();
+                updateProgressBar();
+                renderLyricsDisplay();
+            }
+            
+            function updateTimeDisplay() {
+                const minutes = Math.floor(currentTime / 60);
+                const seconds = Math.floor(currentTime % 60);
+                const hundredths = Math.floor((currentTime % 1) * 100);
+                
+                timeDisplay.textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${hundredths.toString().padStart(2, '0')}`;
+            }
+            
+            function updateProgressBar() {
+                if (audioDuration > 0) {
+                    const progress = (currentTime / audioDuration) * 100;
+                    progressBar.style.width = `${progress}%`;
+                }
+            }
+            
+            function timestampCurrentLine() {
+                if (currentLine < lyrics.length && isPlaying) {
+                    timestamps[currentLine] = currentTime;
+                    
+                    if (currentLine < lyrics.length - 1) {
+                        currentLine++;
+                    } else {
+                        showNotification('Toutes les lignes ont été horodatées!');
+                    }
+                    
+                    renderLyricsDisplay();
+                    updateLROutput();
+                    
+                    showNotification(`Ligne ${currentLine} horodatée à ${timeDisplay.textContent}`);
+                    
+                    // Animation du bouton mobile
+                    if (window.innerWidth <= 768) {
+                        mobileTimestampBtn.style.transform = 'scale(0.95)';
+                        setTimeout(() => {
+                            mobileTimestampBtn.style.transform = 'scale(1)';
+                        }, 150);
+                    }
+                }
+            }
+            
+            function updateLROutput() {
+                let output = '';
+                
+                lyrics.forEach((line, index) => {
+                    if (timestamps[index]) {
+                        const minutes = Math.floor(timestamps[index] / 60);
+                        const seconds = Math.floor(timestamps[index] % 60);
+                        const hundredths = Math.floor((timestamps[index] % 1) * 100);
+                        
+                        output += `[${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${hundredths.toString().padStart(2, '0')}]${line}\n`;
+                    } else {
+                        output += `[--:--.--]${line}\n`;
+                    }
+                });
+                
+                lrcOutput.textContent = output;
+            }
+            
+            function updateStatusInfo() {
+                currentLineNum.textContent = currentLine + 1;
+                totalLines.textContent = lyrics.length;
+                const count = timestamps.filter(ts => ts !== undefined).length;
+                timestampedCount.textContent = count;
+                
+                if (currentLine >= lyrics.length) {
+                    statusInfo.style.background = 'rgba(76, 240, 120, 0.2)';
+                    statusInfo.style.color = '#4cf078';
+                } else {
+                    statusInfo.style.background = 'rgba(255, 255, 255, 0.05)';
+                    statusInfo.style.color = '#e6e6e6';
+                }
+            }
+            
+            function exportLRC() {
+                // Utiliser le nom du fichier MP3 pour le fichier LRC
+                const lrcFileName = currentMp3FileName ? `${currentMp3FileName}.lrc` : 'paroles.lrc';
+                
+                const blob = new Blob([lrcOutput.textContent], { type: 'text/plain' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = lrcFileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                showNotification(`Fichier LRC "${lrcFileName}" exporté avec succès`);
+            }
+            
+            function showPreview() {
+                if (timestamps.filter(ts => ts !== undefined).length === 0) {
+                    showNotification('Veuillez horodater au moins une ligne pour voir l\'aperçu');
+                    return;
+                }
+                
+                if (!previewAudioPlayer.src || previewAudioPlayer.src === '') {
+                    showNotification('Veuillez d\'abord télécharger un fichier MP3');
+                    return;
+                }
+                
+                isPreviewMode = true;
+                document.querySelector('.editor-container').style.display = 'none';
+                document.querySelector('.output-panel').style.display = 'none';
+                previewSection.style.display = 'block';
+                
+                renderPreviewLyrics();
+                previewInfo.textContent = "Utilisez le lecteur audio ci-dessus pour contrôler la musique. Les paroles se synchroniseront automatiquement avec vos horodatages.";
+            }
+            
+            function renderPreviewLyrics() {
+                previewLyrics.innerHTML = '';
+                
+                lyrics.forEach((line, index) => {
+                    const lineElement = document.createElement('div');
+                    lineElement.className = 'preview-line';
+                    lineElement.textContent = line;
+                    lineElement.id = `preview-line-${index}`;
+                    previewLyrics.appendChild(lineElement);
+                });
+            }
+            
+            function startPreviewFromBeginning() {
+                previewAudioPlayer.currentTime = 0;
+                previewAudioPlayer.play().catch(error => {
+                    previewInfo.textContent = "Erreur de lecture: " + error.message;
+                });
+                previewInfo.textContent = "Lecture en cours... Les paroles se synchronisent avec la musique.";
+            }
+            
+            function stopPreview() {
+                previewAudioPlayer.pause();
+                previewInfo.textContent = "Aperçu arrêté. Vous pouvez redémarrer depuis le début.";
+            }
+            
+            function updatePreviewDisplay() {
+                const currentPreviewTime = previewAudioPlayer.currentTime;
+                
+                // Mettre à jour l'affichage du temps
+                const minutes = Math.floor(currentPreviewTime / 60);
+                const seconds = Math.floor(currentPreviewTime % 60);
+                const hundredths = Math.floor((currentPreviewTime % 1) * 100);
+                previewTime.textContent = 
+                    `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}.${hundredths.toString().padStart(2, '0')}`;
+                
+                // Trouver la ligne active basée sur les horodatages
+                let activeLineIndex = -1;
+                
+                for (let i = timestamps.length - 1; i >= 0; i--) {
+                    if (timestamps[i] && currentPreviewTime >= timestamps[i]) {
+                        activeLineIndex = i;
+                        break;
+                    }
+                }
+                
+                // Mettre à jour l'affichage des lignes
+                document.querySelectorAll('.preview-line').forEach((line, index) => {
+                    line.classList.remove('active', 'past');
+                    
+                    if (index === activeLineIndex) {
+                        line.classList.add('active');
+                        line.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                    } else if (timestamps[index] && index < activeLineIndex) {
+                        line.classList.add('past');
+                    }
+                });
+            }
+            
+            function backToEdit() {
+                isPreviewMode = false;
+                previewSection.style.display = 'none';
+                document.querySelector('.editor-container').style.display = 'grid';
+                document.querySelector('.output-panel').style.display = 'block';
+                previewAudioPlayer.pause();
+            }
+            
+            function showNotification(message) {
+                notification.textContent = message;
+                notification.classList.add('show');
+                
+                setTimeout(() => {
+                    notification.classList.remove('show');
+                }, 3000);
+            }
+        });
+    </script>
+</body>
+</html>
