@@ -126,7 +126,7 @@ Vous pouvez :
 Ce projet est distribué sous la **licence MIT**.
 Consultez le fichier [LICENSE](LICENSE) pour plus de détails.
 
-**© 2024 Rady Jackson** — Tous droits réservés sur le code source.
+**© 2025 Rady Jackson** — Tous droits réservés sur le code source.
 
 ---
 
